@@ -1,0 +1,28 @@
+{
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon ."
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.2",
+    "express": "^4.18.1"
+  },
+  "name": "bludoodapi",
+  "description": "My personal API, hosted at https://api.bludood.com.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BluDood/BluDoodAPI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BluDood/BluDoodAPI/issues"
+  },
+  "homepage": "https://github.com/BluDood/BluDoodAPI#readme"
+}
