@@ -25,7 +25,12 @@ for (i in endpoints) {
 }
 
 app.use((req, res) => {
-  res.status(404).send("i dunno man, this endpoint doesn't exist")
+  res.status(404).send('Not Found')
+})
+
+app.use((err, req, res, next) => {
+  console.log(err)
+  res.status(500).send('Internal Server Error')
 })
 
 const client = new Client({
