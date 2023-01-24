@@ -78,7 +78,7 @@ client.on(Events.ClientReady, async e => {
 
 app.listen(process.env.PORT || 1337, () => {
   fs.writeFileSync('./start.txt', Date.now().toString())
-  console.log('API is runnin yo\nhttp://localhost:1337\nhttps://api.bludood.com')
+  console.log(`API started!\nhttp://localhost:${process.env.PORT || 1337}`)
   if (process.env.DISCORD_BOT_TOKEN) client.login(process.env.DISCORD_BOT_TOKEN)
   else console.log('Please set up environment variables for Discord.')
 })
