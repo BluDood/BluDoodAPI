@@ -5,12 +5,10 @@ module.exports = {
   name: '/uptime',
   description: 'Get uptime of the API.',
   handler: (req, res) => {
-    if (process.env.STATISTICS_ENABLED !== 'true') return res.send('Statistics are disabled.')
-    if (!process.env.STATISTICS_TYPES.split(',').includes('uptime')) return res.send('Uptime is disabled.')
-    const start = require('../stats.json').start / 1000
-    const time = new Date() / 1000
+    const start = parseInt(require('../start.txt'))
+    const time = new Date()
     return res.status(200).json({
-      uptime: (time - start).toFixed(2),
+      uptime: ((time - start) / 1000).toFixed(2),
       unit: 'seconds'
     })
   }
