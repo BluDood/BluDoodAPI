@@ -6,7 +6,10 @@ module.exports = {
   name: '/discord',
   description: 'Get my current status on Discord.',
   handler: (req, res) => {
-    const status = JSON.parse(fs.readFileSync('./discord.json'))
-    return res.status(200).json(status)
+    let status
+    try {
+      status = fs.readFileSync('./discord.json')
+    } catch (error) {}
+    return res.status(200).send(JSON.parse(status ?? "{}"))
   }
 }
