@@ -39,7 +39,7 @@ const client = new Client({
 
 client.on(Events.PresenceUpdate, (e, presence) => {
   if (!presence) return
-  if (e.userId !== process.env.DISCORD_USER_ID) return
+  if (presence.user.id !== process.env.DISCORD_USER_ID) return
 
   const activities = presence.activities.filter(a => a.name !== 'Spotify')
   const { status } = presence
@@ -79,6 +79,17 @@ client.on(Events.ClientReady, async e => {
   console.log(`Discord logged in as ${e.user.tag}!`)
   const user = await client.users.fetch(process.env.DISCORD_USER_ID).catch(() => null)
   if (!user) return console.log(`User with ID ${process.env.DISCORD_USER_ID} was not found! Make sure the bot shares a server with the user.`)
+  const { username, discriminator, id, avatar } = user
+  fs.writeFileSync(
+    './discord.json',
+    JSON.stringify({
+      user: {
+        username,
+        discriminator,
+        avatar: `https://cdn.discordapp.com/avatars/${id}/${avatar}`
+      }
+    })
+  )
   console.log(`Cached user ${user.tag}!`)
 })
 
