@@ -1,4 +1,4 @@
-const { Client, IntentsBitField, GatewayIntentBits, Events } = require('discord.js')
+const { Client, GatewayIntentBits, Events } = require('discord.js')
 const express = require('express')
 const cors = require('cors')
 const fs = require('fs')
@@ -39,6 +39,7 @@ const client = new Client({
 
 client.on(Events.PresenceUpdate, (e, presence) => {
   if (!presence) return
+  if (e.userId !== process.env.DISCORD_USER_ID) return
 
   const activities = presence.activities.filter(a => a.name !== 'Spotify')
   const { status } = presence
