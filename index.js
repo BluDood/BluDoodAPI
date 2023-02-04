@@ -44,6 +44,7 @@ client.on(Events.PresenceUpdate, (e, presence) => {
   const activities = presence.activities.filter(a => a.name !== 'Spotify')
   const { status } = presence
   const { username, discriminator, id, avatar } = presence.user
+  const isMobile = presence.clientStatus?.mobile !== undefined
 
   fs.writeFileSync(
     './discord.json',
@@ -53,7 +54,7 @@ client.on(Events.PresenceUpdate, (e, presence) => {
         discriminator,
         avatar: `https://cdn.discordapp.com/avatars/${id}/${avatar}`
       },
-      status,
+      status: isMobile ? 'mobile' : status,
       activities: activities.map(({ name, details, state, assets, timestamps, applicationId }) => {
         return {
           name,
