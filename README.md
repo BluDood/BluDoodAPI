@@ -17,6 +17,10 @@ npm install
 
 2. Set up environment variables
 
+```
+Guide TBA
+```
+
 3. Start the API
 
 ```
