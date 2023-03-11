@@ -41,7 +41,9 @@ client.on(Events.PresenceUpdate, (e, presence) => {
   if (!presence) return
   if (presence.user.id !== process.env.DISCORD_USER_ID) return
 
-  const activities = presence.activities.filter(a => a.name !== 'Spotify')
+  const filtered_activities = ['Spotify', 'Custom Status']
+  const activities = presence.activities.filter(a => !filtered_activities.includes(a.name))
+
   const { status } = presence
   const { username, discriminator, id, avatar } = presence.user
   const isMobile = presence.clientStatus?.mobile !== undefined
