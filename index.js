@@ -61,14 +61,14 @@ client.on(Events.PresenceUpdate, (e, presence) => {
           details,
           state,
           assets: {
-            largeText: assets.largeText,
-            smallText: assets.smallText,
-            largeImage: `https://cdn.discordapp.com/app-assets/${applicationId}/${assets.largeImage}.png`,
-            smallImage: `https://cdn.discordapp.com/app-assets/${applicationId}/${assets.smallImage}.png`
+            largeText: assets?.largeText,
+            smallText: assets?.smallText,
+            largeImage: assets?.largeImage ? `https://cdn.discordapp.com/app-assets/${applicationId}/${assets.largeImage}.png` : null,
+            smallImage: assets?.largeImage ? `https://cdn.discordapp.com/app-assets/${applicationId}/${assets.smallImage}.png` : null
           },
           timestamps: {
-            start: new Date(timestamps.start).getTime(),
-            end: new Date(timestamps.end).getTime()
+            start: timestamps?.start ? new Date(timestamps?.start).getTime() : null,
+            end: timestamps?.end ? new Date(timestamps?.end).getTime() : null
           }
         }
       })
