@@ -13,8 +13,9 @@ module.exports = {
       embeds: [{
         title: `${name} <${email}>`,
         description: message,
-        color: 25855
-      }]
+        color: 25855,
+      }],
+      content: `<@${process.env.DISCORD_USER_ID}>`
     }, {
         validateStatus: false
     })
