@@ -19,7 +19,7 @@ module.exports = {
             color: 25855
           }
         ],
-        content: `<@${process.env.DISCORD_USER_ID}>`
+        content: process.env.DISCORD_USER_ID ? `<@${process.env.DISCORD_USER_ID}>` : ''
       },
       {
         validateStatus: false
