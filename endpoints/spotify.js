@@ -26,12 +26,9 @@ module.exports = {
   name: '/spotify',
   description: 'Get info about my currently playing track on Spotify.',
   handler: async (req, res, next) => {
-    const time = new Date() / 1000
+    if (!SPOTIFY_REFRESH_TOKEN || !SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) return next()
 
-    if (!SPOTIFY_REFRESH_TOKEN || !SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
-      console.log('Please set up environment variables for Spotify.')
-      return next()
-    }
+    const time = new Date() / 1000
     if (!token) token = await getToken()
 
     let spot = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {

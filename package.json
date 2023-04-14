@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node .",
-    "dev": "nodemon ."
+    "dev": "nodemon .",
+    "spotify": "node lib/spotify.js"
   },
   "dependencies": {
     "axios": "^0.27.2",
