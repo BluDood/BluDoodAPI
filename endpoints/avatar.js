@@ -25,8 +25,8 @@ module.exports = {
   handler: async (req, res, next) => {
     if (!process.env.AVATAR_URL) return next()
     const size = parseInt(req.query.size) || null
-    // TTL of 1 hour
-    if (!imageBuffer || lastFetch + 60 * 60 * 1000 <= Date.now()) await fetchImage()
+    // TTL of 12 hour
+    if (!imageBuffer || lastFetch + 12 * 60 * 60 * 1000 <= Date.now()) await fetchImage()
     if (size > imageSize) return res.send('Size too large')
     res.contentType(`image/${process.env.AVATAR_URL.split('.')?.pop()?.toLowerCase() || 'png'}`)
     res.send(Buffer.from(await sizeImage(size), 'binary'))
