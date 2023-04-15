@@ -1,4 +1,4 @@
-const fs = require('fs')
+const { getPresence } = require('../lib/presence')
 require('dotenv').config()
 
 module.exports = {
@@ -6,8 +6,8 @@ module.exports = {
   name: '/discord',
   description: 'Get my current status on Discord.',
   handler: (req, res, next) => {
-    if (!fs.existsSync('./discord.json')) return next()
-    const status = fs.readFileSync('./discord.json')
-    return res.status(200).send(JSON.parse(status))
+    const presence = getPresence()
+    if (presence === null) return next()
+    return res.status(200).send(presence)
   }
 }
