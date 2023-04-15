@@ -5,6 +5,6 @@ module.exports = {
   name: '/ip',
   description: 'Get your IP address.',
   handler: async (req, res) => {
-    return res.send(req.ip)
+    return res.send(req.headers['x-forwarded-for'] || req.ip)
   }
 }
