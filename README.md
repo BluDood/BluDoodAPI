@@ -6,6 +6,7 @@ My personal API, hosted at https://api.bludood.com.
 
 - Fetching current Spotify status including track, album, urls, images and more
 - Live activity status from Discord
+- Hosting of avatar with real-time resizing
 
 ## Setup:
 
