@@ -1,7 +1,9 @@
-const { default: axios } = require('axios')
-const sharp = require('sharp')
+import axios from 'axios'
+import sharp from 'sharp'
 
-require('dotenv').config()
+let imageBuffer
+let imageSize
+let lastFetch
 
 async function fetchImage() {
   const res = await axios.get(process.env.AVATAR_URL, { responseType: 'arraybuffer' })
@@ -14,21 +16,15 @@ async function sizeImage(size = 256) {
   return await sharp(imageBuffer).resize({ width: size, height: size }).toBuffer()
 }
 
-let imageBuffer
-let imageSize
-let lastFetch
+export const method = 'get'
+export const name = '/avatar'
 
-module.exports = {
-  method: 'get',
-  name: '/avatar',
-  description: 'Get my avatar in a custom size.',
-  handler: async (req, res, next) => {
-    if (!process.env.AVATAR_URL) return next()
-    const size = parseInt(req.query.size) || null
-    // TTL of 12 hour
-    if (!imageBuffer || lastFetch + 12 * 60 * 60 * 1000 <= Date.now()) await fetchImage()
-    if (size > imageSize) return res.send('Size too large')
-    res.contentType(`image/${process.env.AVATAR_URL.split('.')?.pop()?.toLowerCase() || 'png'}`)
-    res.send(Buffer.from(await sizeImage(size), 'binary'))
-  }
+export const handler = async (req, res, next) => {
+  if (!process.env.AVATAR_URL) return next()
+  const size = parseInt(req.query.size) || null
+  // TTL of 12 hour
+  if (!imageBuffer || lastFetch + 12 * 60 * 60 * 1000 <= Date.now()) await fetchImage()
+  if (size > imageSize) return res.send('Size too large')
+  res.contentType(`image/${process.env.AVATAR_URL.split('.')?.pop()?.toLowerCase() || 'png'}`)
+  res.send(Buffer.from(await sizeImage(size), 'binary'))
 }

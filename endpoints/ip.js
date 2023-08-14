@@ -1,10 +1,6 @@
-require('dotenv').config()
+export const method = 'get'
+export const name = '/ip'
 
-module.exports = {
-  method: 'get',
-  name: '/ip',
-  description: 'Get your IP address.',
-  handler: async (req, res) => {
-    return res.send(req.headers['x-forwarded-for'] || req.ip)
-  }
+export const handler = async (req, res) => {
+  return res.send(req.headers['x-forwarded-for'] || req.ip)
 }

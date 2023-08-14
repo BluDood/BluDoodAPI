@@ -1,29 +1,23 @@
-const express = require('express')
-const cors = require('cors')
-const fs = require('fs')
+import 'dotenv/config'
 
-const bot = require('./lib/bot')
-const log = require('./lib/log')
+import express from 'express'
+import cors from 'cors'
+import fs from 'fs'
 
-require('dotenv').config()
-
-const endpoints = fs.readdirSync('./endpoints').filter(f => f.endsWith('.js'))
+import bot from './lib/bot.js'
+import log from './lib/log.js'
 
 const app = express()
-
 app.use(express.json())
-app.use(
-  cors({
-    origin: '*'
-  })
-)
+app.use(cors())
 
 app.get('/', (req, res) => {
   res.send('sup')
 })
 
-for (i in endpoints) {
-  const endpoint = require(`./endpoints/${endpoints[i]}`)
+const endpoints = fs.readdirSync('./endpoints').filter(f => f.endsWith('.js'))
+for (const i in endpoints) {
+  const endpoint = await import(`./endpoints/${endpoints[i]}`)
   app[endpoint.method](endpoint.name, endpoint.handler)
 }
 

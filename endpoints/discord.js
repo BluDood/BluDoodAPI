@@ -1,13 +1,10 @@
-const { getPresence } = require('../lib/presence')
-require('dotenv').config()
+import { getPresence } from '../lib/presence.js'
 
-module.exports = {
-  method: 'get',
-  name: '/discord',
-  description: 'Get my current status on Discord.',
-  handler: (req, res, next) => {
-    const presence = getPresence()
-    if (presence === null) return next()
-    return res.status(200).send(presence)
-  }
+export const method = 'get'
+export const name = '/discord'
+
+export const handler = (req, res, next) => {
+  const presence = getPresence()
+  if (presence === null) return next()
+  return res.status(200).send(presence)
 }
