@@ -1,0 +1,7 @@
+services:
+  bludoodapi:
+    build: .
+    restart: unless-stopped
+    ports:
+      - '1337:1337'
+    env_file: .env
