@@ -16,13 +16,16 @@ export const handler = async (req, res, next) => {
           color: 25855
         }
       ],
-      content: process.env.DISCORD_USER_ID ? `<@${process.env.DISCORD_USER_ID}>` : ''
+      content: process.env.DISCORD_USER_ID
+        ? `<@${process.env.DISCORD_USER_ID}>`
+        : ''
     },
     {
-      validateStatus: false
+      validateStatus: () => true
     }
   )
-  if (hook.status !== 204) return res.status(500).send('An unknown error occorred.')
+  if (hook.status !== 204)
+    return res.status(500).send('An unknown error occorred.')
 
   return res.send('Success')
 }

@@ -1,7 +1,7 @@
 {
   "name": "bludoodapi",
   "description": "My personal API, hosted at https://api.bludood.com.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -16,8 +16,7 @@
   "homepage": "https://github.com/BluDood/BluDoodAPI#readme",
   "scripts": {
     "start": "node .",
-    "dev": "nodemon .",
-    "spotify": "node lib/spotify.js"
+    "dev": "nodemon ."
   },
   "type": "module",
   "dependencies": {
@@ -26,6 +25,8 @@
     "discord.js": "^14.12.1",
     "dotenv": "^16.0.2",
     "express": "^4.18.1",
+    "express-ws": "^5.0.2",
+    "node-html-parser": "^6.1.5",
     "sharp": "^0.32.0"
   }
 }

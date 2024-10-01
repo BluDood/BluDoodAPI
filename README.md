@@ -4,7 +4,7 @@ My personal API, hosted at https://api.bludood.com.
 
 ## Features:
 
-- Fetching current Spotify status including track, album, urls, images and more
+- Live fetching of current Spotify status including track, album, urls, images and more
 - Live activity status from Discord
 - Hosting of avatar with real-time resizing
 
@@ -25,3 +25,7 @@ All entries are optional, [here are guides to set them all up](https://github.co
 ```
 npm start
 ```
+
+## Notice
+
+To enable real-time updates for Spotify (and no unnecessary spamming of their API), this uses some unofficial Spotify APIs, which could set your account at a risk of getting removed by Spotify. Use at your own risk.

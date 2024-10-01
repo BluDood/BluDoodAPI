@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
 import express from 'express'
+import ws from 'express-ws'
 import cors from 'cors'
 import fs from 'fs'
 
@@ -10,6 +11,7 @@ import log from './lib/log.js'
 const app = express()
 app.use(express.json())
 app.use(cors())
+ws(app)
 
 app.get('/', (req, res) => {
   res.send('sup')
