@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { EmbedBuilder } from 'discord.js'
 import { NextFunction, Request, Response } from 'express'
+import { contactSchema } from '../lib/schemas.js'
 
 const { DISCORD_WEBHOOK, DISCORD_USER_ID } = process.env
 
@@ -10,7 +11,11 @@ export async function post(
   next: NextFunction
 ) {
   if (!DISCORD_WEBHOOK) return next()
-  const { name, email, message } = req.body
+
+  const parsed = contactSchema.safeParse(req.query)
+  if (!parsed.success)
+    return res.status(400).json({ message: 'Bad Request' })
+  const { name, email, message } = parsed.data
 
   const embed = new EmbedBuilder()
     .setTitle(`${name} <${email}>`)
