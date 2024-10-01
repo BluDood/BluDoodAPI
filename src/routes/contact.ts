@@ -1,26 +1,27 @@
 import axios from 'axios'
+import { EmbedBuilder } from 'discord.js'
 import { NextFunction, Request, Response } from 'express'
+
+const { DISCORD_WEBHOOK, DISCORD_USER_ID } = process.env
 
 export async function post(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  if (!process.env.DISCORD_WEBHOOK) return next()
+  if (!DISCORD_WEBHOOK) return next()
   const { name, email, message } = req.body
+
+  const embed = new EmbedBuilder()
+    .setTitle(`${name} <${email}>`)
+    .setDescription(message)
+    .setColor('#0064FF')
+
   const hook = await axios.post(
-    process.env.DISCORD_WEBHOOK,
+    DISCORD_WEBHOOK,
     {
-      embeds: [
-        {
-          title: `${name} <${email}>`,
-          description: message,
-          color: 25855
-        }
-      ],
-      content: process.env.DISCORD_USER_ID
-        ? `<@${process.env.DISCORD_USER_ID}>`
-        : ''
+      embeds: [embed],
+      content: DISCORD_USER_ID ? `<@${DISCORD_USER_ID}>` : ''
     },
     {
       validateStatus: () => true
