@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": ["node_modules/**/*", "dist/**/*"],
+  "include": ["src/**/*.ts"]
+}

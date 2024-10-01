@@ -3,7 +3,7 @@ import EventEmitter from 'events'
 import WebSocket from 'ws'
 import { parse } from 'node-html-parser'
 
-async function subscribe(connection_id, token) {
+async function subscribe(connection_id: string, token: string) {
   return await axios.put(
     'https://api.spotify.com/v1/me/notifications/player',
     null,
@@ -19,7 +19,7 @@ async function subscribe(connection_id, token) {
   )
 }
 
-async function getToken(sp_dc) {
+async function getToken(sp_dc: string) {
   const res = await axios.get('https://open.spotify.com', {
     headers: {
       cookie: `sp_dc=${sp_dc};`,
@@ -30,11 +30,64 @@ async function getToken(sp_dc) {
   })
 
   return JSON.parse(
-    parse(res.data).querySelector('script#session').innerText
+    parse(res.data).querySelector('script#session')!.innerText
   ).accessToken
 }
 
-export function filterData(data) {
+export interface SpotifyCurrentPlayingResponse {
+  is_playing: boolean
+  progress_ms: number
+  item: {
+    name: string
+    external_urls: {
+      spotify: string
+    }
+    artists: {
+      name: string
+      external_urls: {
+        spotify: string
+      }
+    }[]
+    album: {
+      name: string
+      href: string
+      images: {
+        url: string
+        width: number
+        height: number
+      }[]
+    }
+    duration_ms: number
+  }
+}
+
+interface FilteredSpotifyCurrentPlayingResponse {
+  session: boolean
+  playing?: boolean
+  name?: string
+  trackURL?: string
+  artists?: {
+    name: string
+    url: string
+  }[]
+  album?: {
+    name: string
+    url: string
+  }
+  covers?: {
+    url: string
+    width: number
+    height: number
+  }[]
+  duration?: {
+    current: number
+    total: number
+  }
+}
+
+export function filterData(
+  data: SpotifyCurrentPlayingResponse
+): FilteredSpotifyCurrentPlayingResponse {
   const { is_playing, item, progress_ms } = data
 
   if (!is_playing || !item) return { session: false }
@@ -61,10 +114,16 @@ export function filterData(data) {
 }
 
 class Spotify extends EventEmitter {
-  constructor(sp_dc) {
+  sp_dc: string
+  token: string | null
+  ws: WebSocket | null
+
+  constructor(sp_dc: string) {
     super()
 
     this.sp_dc = sp_dc
+    this.token = null
+    this.ws = null
     this.start()
   }
 
@@ -79,7 +138,8 @@ class Spotify extends EventEmitter {
   }
 
   setup() {
-    const ping = () => this.ws.send('{"type":"ping"}')
+    if (!this.ws) return
+    const ping = () => this.ws!.send('{"type":"ping"}')
 
     this.ws.on('open', () => {
       ping()
@@ -91,7 +151,7 @@ class Spotify extends EventEmitter {
       if (msg.headers?.['Spotify-Connection-Id']) {
         return await subscribe(
           msg.headers['Spotify-Connection-Id'],
-          this.token
+          this.token!
         )
           .then(() => this.emit('ready'))
           .catch(err => this.emit('error', err))
@@ -106,7 +166,7 @@ class Spotify extends EventEmitter {
     this.ws.on('error', err => this.emit('error', err))
   }
 
-  async getCurrent() {
+  async getCurrent(): Promise<FilteredSpotifyCurrentPlayingResponse> {
     const res = await axios.get(
       'https://api.spotify.com/v1/me/player/currently-playing',
       {

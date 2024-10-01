@@ -16,11 +16,17 @@ My personal API, hosted at https://api.bludood.com.
 npm install
 ```
 
-2. Set up environment variables
+2. Build TypeScript source
+
+```
+npm run build
+```
+
+3. Set up environment variables
 
 All entries are optional, [here are guides to set them all up](https://github.com/BluDood/BluDoodAPI/wiki)
 
-3. Start the API
+4. Start the API
 
 ```
 npm start

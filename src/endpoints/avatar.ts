@@ -1,20 +1,22 @@
 import axios from 'axios'
+import { NextFunction, Request, Response } from 'express'
 import sharp from 'sharp'
 
-let imageBuffer
-let imageSize
-let lastFetch
+let imageBuffer: Buffer
+let imageSize: number
+let lastFetch: number
 
 async function fetchImage() {
-  const res = await axios.get(process.env.AVATAR_URL, {
+  const res = await axios.get(process.env.AVATAR_URL!, {
     responseType: 'arraybuffer'
   })
-  imageSize = (await sharp(res.data).metadata()).width
+  imageSize = (await sharp(res.data).metadata()).width!
   imageBuffer = res.data
   lastFetch = Date.now()
 }
 
 async function sizeImage(size = 256) {
+  if (size >= imageSize) return imageBuffer
   return await sharp(imageBuffer)
     .resize({ width: size, height: size })
     .toBuffer()
@@ -23,17 +25,21 @@ async function sizeImage(size = 256) {
 export const method = 'get'
 export const name = '/avatar'
 
-export const handler = async (req, res, next) => {
+export const handler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (!process.env.AVATAR_URL) return next()
-  const size = parseInt(req.query.size) || null
+  let size = parseInt(req.query.size as string)
+  if (!size || isNaN(size) || size > imageSize) size = imageSize
   // TTL of 12 hour
   if (!imageBuffer || lastFetch + 12 * 60 * 60 * 1000 <= Date.now())
     await fetchImage()
-  if (size > imageSize) return res.send('Size too large')
   res.contentType(
     `image/${
       process.env.AVATAR_URL.split('.')?.pop()?.toLowerCase() || 'png'
     }`
   )
-  res.send(Buffer.from(await sizeImage(size), 'binary'))
+  res.send(await sizeImage(size))
 }
