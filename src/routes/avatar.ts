@@ -22,14 +22,11 @@ async function sizeImage(size = 256) {
     .toBuffer()
 }
 
-export const method = 'get'
-export const name = '/avatar'
-
-export const handler = async (
+export async function get(
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+) {
   if (!process.env.AVATAR_URL) return next()
   let size = parseInt(req.query.size as string)
   if (!size || isNaN(size) || size > imageSize) size = imageSize

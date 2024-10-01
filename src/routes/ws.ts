@@ -5,10 +5,7 @@ import spotify, {
   SpotifyCurrentPlayingResponse
 } from '../lib/spotify.js'
 
-export const method = 'ws'
-export const name = '/ws'
-
-export const handler = async (ws: WebSocket, req: Request) => {
+export async function ws(ws: WebSocket, req: Request) {
   const discordListener = (presence: FilteredPresence) =>
     ws.send(
       JSON.stringify({

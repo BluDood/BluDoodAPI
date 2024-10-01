@@ -1,12 +1,13 @@
 import 'dotenv/config'
 
 import express, { NextFunction, Request, Response } from 'express'
-import ws, { WebsocketRequestHandler } from 'express-ws'
+import ws from 'express-ws'
 import cors from 'cors'
-import fs from 'fs'
+import path from 'path'
 
 import bot from './lib/bot.js'
 import log from './lib/log.js'
+import { router } from 'express-file-routing'
 
 const app = express()
 app.use(express.json())
@@ -17,27 +18,12 @@ app.get('/', (req, res) => {
   res.send('sup')
 })
 
-const endpoints = fs
-  .readdirSync('./dist/endpoints')
-  .filter(f => f.endsWith('.js'))
-
-type Endpoint = {
-  method: 'get' | 'post' | 'ws'
-  name: string
-  handler: express.RequestHandler | WebsocketRequestHandler
-}
-
-for (const i in endpoints) {
-  const endpoint: Endpoint = await import(`./endpoints/${endpoints[i]}`)
-  if (endpoint.method === 'ws') {
-    app.ws(endpoint.name, endpoint.handler as WebsocketRequestHandler)
-  } else {
-    app[endpoint.method](
-      endpoint.name,
-      endpoint.handler as express.RequestHandler
-    )
-  }
-}
+app.use(
+  await router({
+    additionalMethods: ['ws'],
+    directory: path.join(process.cwd(), 'dist/routes')
+  })
+)
 
 app.use((req, res) => {
   res.status(404).send('Not Found')
