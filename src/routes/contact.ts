@@ -12,7 +12,7 @@ export async function post(
 ) {
   if (!DISCORD_WEBHOOK) return next()
 
-  const parsed = contactSchema.safeParse(req.query)
+  const parsed = contactSchema.safeParse(req.body)
   if (!parsed.success)
     return res.status(400).json({ message: 'Bad Request' })
   const { name, email, message } = parsed.data
