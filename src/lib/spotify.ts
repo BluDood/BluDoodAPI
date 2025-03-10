@@ -20,18 +20,27 @@ async function subscribe(connection_id: string, token: string) {
 }
 
 async function getToken(sp_dc: string) {
-  const res = await axios.get('https://open.spotify.com', {
-    headers: {
-      cookie: `sp_dc=${sp_dc};`,
-      'user-agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-    },
-    validateStatus: () => true
-  })
+  const res = await axios.get(
+    'https://open.spotify.com/get_access_token',
+    {
+      headers: {
+        cookie: `sp_dc=${sp_dc};`,
+        'user-agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      },
+      params: {
+        reason: 'init',
+        productType: 'web-player'
+      },
+      validateStatus: () => true
+    }
+  )
 
-  return JSON.parse(
-    parse(res.data).querySelector('script#session')!.innerText
-  ).accessToken
+  if (res.status !== 200) throw new Error('Invalid sp_dc')
+
+  if (!res.data.accessToken) throw new Error('Invalid sp_dc')
+
+  return res.data.accessToken
 }
 
 export interface SpotifyCurrentPlayingResponse {
