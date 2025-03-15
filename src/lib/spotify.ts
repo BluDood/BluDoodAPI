@@ -1,7 +1,6 @@
 import axios from 'axios'
 import EventEmitter from 'events'
 import WebSocket from 'ws'
-import { parse } from 'node-html-parser'
 
 import log from './log.js'
 
