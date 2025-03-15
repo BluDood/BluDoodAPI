@@ -3,6 +3,8 @@ import EventEmitter from 'events'
 import WebSocket from 'ws'
 import { parse } from 'node-html-parser'
 
+import log from './log.js'
+
 async function subscribe(connection_id: string, token: string) {
   return await axios.put(
     'https://api.spotify.com/v1/me/notifications/player',
@@ -137,7 +139,12 @@ class Spotify extends EventEmitter {
   }
 
   start = async () => {
-    this.token = await getToken(this.sp_dc)
+    this.token = await getToken(this.sp_dc).catch(err => {
+      log(`Error: ${err.message}`, 'Spotify')
+      return null
+    })
+
+    if (!this.token) return null
 
     this.ws = new WebSocket(
       `wss://dealer.spotify.com/?access_token=${this.token}`
@@ -187,7 +194,11 @@ class Spotify extends EventEmitter {
     )
 
     if (res.status === 401) {
-      this.token = await getToken(this.sp_dc)
+      this.token = await getToken(this.sp_dc).catch(err => {
+        log(`Error: ${err.message}`, 'Spotify')
+        return null
+      })
+      if (!this.token) return { session: false }
       this.ws = new WebSocket(
         `wss://dealer.spotify.com/?access_token=${this.token}`
       )
