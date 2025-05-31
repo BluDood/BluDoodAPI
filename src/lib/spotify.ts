@@ -163,13 +163,19 @@ interface FilteredSpotifyCurrentPlayingResponse {
 }
 
 export function filterData(
-  data: SpotifyCurrentPlayingResponse
+  data: SpotifyCurrentPlayingResponse,
+  startedPlaying: number | null
 ): FilteredSpotifyCurrentPlayingResponse {
   if (!data || !data.item) {
     return { session: false }
   }
 
   const { is_playing, item, progress_ms } = data
+
+  const currentTime =
+    startedPlaying && is_playing
+      ? progress_ms + Math.floor(Date.now() - startedPlaying)
+      : progress_ms
 
   return {
     session: true,
@@ -186,7 +192,7 @@ export function filterData(
     },
     covers: item.album.images,
     duration: {
-      current: progress_ms,
+      current: currentTime,
       total: item.duration_ms
     }
   }
@@ -196,6 +202,7 @@ class Spotify extends EventEmitter {
   sp_dc: string
   ws: WebSocket | null
   current: SpotifyCurrentPlayingResponse | null = null
+  startedPlaying: number | null = null
 
   constructor(sp_dc: string) {
     super()
@@ -206,6 +213,7 @@ class Spotify extends EventEmitter {
 
     this.on('PLAYER_STATE_CHANGED', e => {
       this.current = e.state
+      this.startedPlaying = Date.now()
     })
 
     this.on('DEVICE_STATE_CHANGED', e => {
@@ -283,7 +291,7 @@ class Spotify extends EventEmitter {
         session: false
       }
 
-    return filterData(this.current)
+    return filterData(this.current, this.startedPlaying)
   }
 }
 

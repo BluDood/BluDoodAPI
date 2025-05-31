@@ -20,7 +20,7 @@ export async function ws(ws: WebSocket, req: Request) {
     ws.send(
       JSON.stringify({
         type: 'spotify',
-        data: filterData(data.state)
+        data: filterData(data.state, null)
       })
     )
 
