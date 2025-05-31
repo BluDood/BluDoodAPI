@@ -21,22 +21,22 @@
   },
   "type": "module",
   "dependencies": {
-    "axios": "^1.7.7",
+    "axios": "^1.9.0",
     "cors": "^2.8.5",
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "express-file-routing": "^3.0.3",
+    "discord.js": "^14.19.3",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-file-routing": "^3.1.0",
     "express-ws": "^5.0.2",
-    "sharp": "^0.33.5",
+    "sharp": "^0.34.2",
     "totp-generator": "^1.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.42"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
     "@types/express-ws": "^3.0.5",
-    "tsc-watch": "^6.2.0",
-    "typescript": "^5.6.2"
+    "tsc-watch": "^7.1.1",
+    "typescript": "^5.8.3"
   }
 }

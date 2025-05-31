@@ -1,13 +1,13 @@
 import 'dotenv/config'
 
 import express, { NextFunction, Request, Response } from 'express'
+import createRouter from 'express-file-routing'
 import ws from 'express-ws'
 import cors from 'cors'
 import path from 'path'
 
 import bot from './lib/bot.js'
 import log from './lib/log.js'
-import { router } from 'express-file-routing'
 
 const app = express()
 app.use(express.json())
@@ -18,12 +18,10 @@ app.get('/', (req, res) => {
   res.send('sup')
 })
 
-app.use(
-  await router({
-    additionalMethods: ['ws'],
-    directory: path.join(process.cwd(), 'dist/routes')
-  })
-)
+await createRouter(app, {
+  additionalMethods: ['ws'],
+  directory: path.join(process.cwd(), 'dist/routes')
+})
 
 app.use((req, res) => {
   res.status(404).send('Not Found')
