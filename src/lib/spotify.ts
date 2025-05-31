@@ -171,8 +171,6 @@ export function filterData(
 
   const { is_playing, item, progress_ms } = data
 
-  if (!is_playing || !item) return { session: false }
-
   return {
     session: true,
     playing: is_playing,
@@ -196,35 +194,54 @@ export function filterData(
 
 class Spotify extends EventEmitter {
   sp_dc: string
-  token: string | null
   ws: WebSocket | null
+  current: SpotifyCurrentPlayingResponse | null = null
 
   constructor(sp_dc: string) {
     super()
 
     this.sp_dc = sp_dc
-    this.token = null
     this.ws = null
-    this.start()
-  }
+    this.setup()
 
-  start = async () => {
-    this.token = await getToken(this.sp_dc).catch(err => {
-      log(`Error: ${err.message}`, 'Spotify')
-      return null
+    this.on('PLAYER_STATE_CHANGED', e => {
+      this.current = e.state
     })
 
-    if (!this.token) return null
+    this.on('DEVICE_STATE_CHANGED', e => {
+      if (e.devices.length === 0) {
+        this.emit('PLAYER_STATE_CHANGED', {
+          state: null
+        })
+      }
+    })
 
-    this.ws = new WebSocket(
-      `wss://dealer.spotify.com/?access_token=${this.token}`
-    )
+    this.on('ready', () => {
+      log('Socket is ready!', 'Spotify')
+    })
 
-    this.setup()
+    this.on('error', err => {
+      log(`Error: ${err.message}`, 'Spotify')
+    })
+
+    this.on('close', () => {
+      log('Socket closed, reconnecting...', 'Spotify')
+      this.setup()
+    })
   }
 
-  setup() {
-    if (!this.ws) return
+  async setup() {
+    if (this.ws) this.cleanup()
+
+    const token = await getToken(this.sp_dc).catch(err => {
+      this.emit('error', new Error('Failed to get Spotify token'))
+      return null
+    })
+    if (!token) return
+
+    this.ws = new WebSocket(
+      `wss://dealer.spotify.com/?access_token=${token}`
+    )
     const ping = () => this.ws!.send('{"type":"ping"}')
 
     this.ws.on('open', () => {
@@ -235,10 +252,7 @@ class Spotify extends EventEmitter {
     this.ws.on('message', async d => {
       const msg = JSON.parse(d.toString())
       if (msg.headers?.['Spotify-Connection-Id']) {
-        return await subscribe(
-          msg.headers['Spotify-Connection-Id'],
-          this.token!
-        )
+        return await subscribe(msg.headers['Spotify-Connection-Id'], token)
           .then(() => this.emit('ready'))
           .catch(err => this.emit('error', err))
       }
@@ -249,39 +263,27 @@ class Spotify extends EventEmitter {
 
     this.ws.on('close', () => this.emit('close'))
 
-    this.ws.on('error', err => this.emit('error', err))
+    this.ws.on('error', err => {
+      this.emit('error', err)
+      this.emit('close')
+    })
+  }
+
+  cleanup() {
+    if (this.ws) {
+      this.ws.removeAllListeners()
+      this.ws.close()
+      this.ws = null
+    }
   }
 
   async getCurrent(): Promise<FilteredSpotifyCurrentPlayingResponse> {
-    const res = await axios.get(
-      'https://api.spotify.com/v1/me/player/currently-playing',
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`
-        },
-        validateStatus: () => true
-      }
-    )
-
-    if (res.status === 401) {
-      this.token = await getToken(this.sp_dc).catch(err => {
-        log(`Error: ${err.message}`, 'Spotify')
-        return null
-      })
-      if (!this.token) return { session: false }
-      this.ws = new WebSocket(
-        `wss://dealer.spotify.com/?access_token=${this.token}`
-      )
-      this.setup()
-      return this.getCurrent()
-    }
-
-    if (!res.data)
+    if (!this.current)
       return {
         session: false
       }
 
-    return filterData(res.data)
+    return filterData(this.current)
   }
 }
 
