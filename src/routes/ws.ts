@@ -24,8 +24,25 @@ export async function ws(ws: WebSocket, req: Request) {
       })
     )
 
-  if (presence.get()) presence.on('update', discordListener)
-  if (spotify) spotify.on('PLAYER_STATE_CHANGED', spotifyListener)
+  if (presence.get()) {
+    ws.send(
+      JSON.stringify({
+        type: 'discord',
+        data: presence.get()
+      })
+    )
+    presence.on('update', discordListener)
+  }
+
+  if (spotify) {
+    ws.send(
+      JSON.stringify({
+        type: 'spotify',
+        data: spotify.getCurrent()
+      })
+    )
+    spotify.on('PLAYER_STATE_CHANGED', spotifyListener)
+  }
 
   ws.addEventListener('close', () => {
     if (presence.get()) presence.off('update', discordListener)
