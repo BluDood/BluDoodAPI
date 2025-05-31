@@ -165,6 +165,10 @@ interface FilteredSpotifyCurrentPlayingResponse {
 export function filterData(
   data: SpotifyCurrentPlayingResponse
 ): FilteredSpotifyCurrentPlayingResponse {
+  if (!data || !data.item) {
+    return { session: false }
+  }
+
   const { is_playing, item, progress_ms } = data
 
   if (!is_playing || !item) return { session: false }
