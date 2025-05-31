@@ -1,10 +1,12 @@
 import { z } from 'zod'
 
 export const getAvatarSchema = z.object({
-  size: z.preprocess(
-    s => parseInt(s as string),
-    z.number().int().min(1).max(2048).optional()
-  )
+  size: z
+    .preprocess(
+      s => parseInt(s as string),
+      z.number().int().min(1).max(2048)
+    )
+    .optional()
 })
 
 export const contactSchema = z.object({
