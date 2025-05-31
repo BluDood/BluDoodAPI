@@ -8,6 +8,9 @@ COPY package.json package-lock.json ./
 # install dependencies
 RUN npm ci
 
+# install optional dependencies for sharp
+RUN npm install --include=optional sharp
+
 # copy source code
 COPY . /app
 
