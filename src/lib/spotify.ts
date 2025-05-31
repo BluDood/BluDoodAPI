@@ -277,7 +277,7 @@ class Spotify extends EventEmitter {
     }
   }
 
-  async getCurrent(): Promise<FilteredSpotifyCurrentPlayingResponse> {
+  getCurrent(): FilteredSpotifyCurrentPlayingResponse {
     if (!this.current)
       return {
         session: false
