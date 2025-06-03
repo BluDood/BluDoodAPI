@@ -181,7 +181,7 @@ export function filterData(
 
   const currentTime = Math.min(
     Math.max(
-      is_playing
+      is_playing && lastUpdate < Date.now()
         ? progress_ms + Math.floor(Date.now() - lastUpdate)
         : progress_ms,
       0
