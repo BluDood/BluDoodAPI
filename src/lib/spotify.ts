@@ -164,7 +164,7 @@ interface FilteredSpotifyCurrentPlayingResponse {
 
 export function filterData(
   data: SpotifyCurrentPlayingResponse,
-  startedPlaying: number | null
+  lastUpdate = Number.MAX_SAFE_INTEGER
 ): FilteredSpotifyCurrentPlayingResponse {
   if (!data || !data.item) {
     return { session: false }
@@ -172,10 +172,15 @@ export function filterData(
 
   const { is_playing, item, progress_ms } = data
 
-  const currentTime =
-    startedPlaying && is_playing
-      ? progress_ms + Math.floor(Date.now() - startedPlaying)
-      : progress_ms
+  const currentTime = Math.min(
+    Math.max(
+      is_playing
+        ? progress_ms + Math.floor(Date.now() - lastUpdate)
+        : progress_ms,
+      0
+    ),
+    item.duration_ms
+  )
 
   return {
     session: true,
@@ -202,7 +207,7 @@ class Spotify extends EventEmitter {
   sp_dc: string
   ws: WebSocket | null
   current: SpotifyCurrentPlayingResponse | null = null
-  startedPlaying: number | null = null
+  lastUpdate: number = 0
 
   constructor(sp_dc: string) {
     super()
@@ -213,7 +218,7 @@ class Spotify extends EventEmitter {
 
     this.on('PLAYER_STATE_CHANGED', e => {
       this.current = e.state
-      this.startedPlaying = Date.now()
+      this.lastUpdate = Date.now()
     })
 
     this.on('DEVICE_STATE_CHANGED', e => {
@@ -290,8 +295,7 @@ class Spotify extends EventEmitter {
       return {
         session: false
       }
-
-    return filterData(this.current, this.startedPlaying)
+    return filterData(this.current, this.lastUpdate)
   }
 }
 
