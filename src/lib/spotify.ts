@@ -172,6 +172,11 @@ export function filterData(
 
   const { is_playing, item, progress_ms } = data
 
+  const TIMEOUT = 1000 * 60 * 10 // 10 minutes
+  if (!is_playing && lastUpdate <= Date.now() - TIMEOUT) {
+    return { session: false }
+  }
+
   const currentTime = Math.min(
     Math.max(
       is_playing
