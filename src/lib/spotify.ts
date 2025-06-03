@@ -127,7 +127,9 @@ export interface SpotifyCurrentPlayingResponse {
     }[]
     album: {
       name: string
-      href: string
+      external_urls: {
+        spotify: string
+      }
       images: {
         url: string
         width: number
@@ -198,7 +200,7 @@ export function filterData(
     })),
     album: {
       name: item.album.name,
-      url: item.album.href
+      url: item.album.external_urls.spotify
     },
     covers: item.album.images,
     duration: {
