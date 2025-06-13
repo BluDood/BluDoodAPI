@@ -51,10 +51,7 @@ function cleanBuffer(e: string): Uint8Array {
   return buffer
 }
 
-async function generateTotp(): Promise<{
-  otp: string
-  timestamp: number
-}> {
+async function generateTotp(): Promise<string> {
   const secretSauce = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
   const secretCipherBytes = [
@@ -69,40 +66,28 @@ async function generateTotp(): Promise<{
 
   const secret = base32FromBytes(secretBytes, secretSauce)
 
-  const res = await axios.get('https://open.spotify.com/server-time')
-  const timestamp = res.data.serverTime * 1000
+  const totp = TOTP.generate(secret)
 
-  const totp = TOTP.generate(secret, {
-    timestamp
-  })
-
-  return {
-    otp: totp.otp,
-    timestamp
-  }
+  return totp.otp
 }
 
 async function getToken(sp_dc: string) {
   const totp = await generateTotp()
 
-  const res = await axios.get(
-    'https://open.spotify.com/get_access_token',
-    {
-      headers: {
-        cookie: `sp_dc=${sp_dc};`,
-        'user-agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      },
-      params: {
-        reason: 'init',
-        productType: 'web-player',
-        totp: totp.otp,
-        totpVer: '5',
-        ts: totp.timestamp
-      },
-      validateStatus: () => true
-    }
-  )
+  const res = await axios.get('https://open.spotify.com/api/token', {
+    headers: {
+      cookie: `sp_dc=${sp_dc};`,
+      'user-agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+    },
+    params: {
+      reason: 'init',
+      productType: 'web-player',
+      totp,
+      totpVer: '5'
+    },
+    validateStatus: () => true
+  })
 
   if (res.status !== 200) throw new Error('Invalid sp_dc')
 
