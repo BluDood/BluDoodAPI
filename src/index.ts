@@ -7,7 +7,7 @@ import cors from 'cors'
 import path from 'path'
 
 import bot from './lib/bot.js'
-import log from './lib/log.js'
+import { logger } from './lib/utils.js'
 
 const app = express()
 app.use(express.json())
@@ -28,14 +28,14 @@ app.use((req, res) => {
 })
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  log(`Error: ${err.message}`, 'Server')
+  logger.error(`Error: ${err.message}`, 'Server')
   res.status(500).send('Internal Server Error')
 })
 
 const port = process.env.PORT || 1337
 
 app.listen(port, () => {
-  log(`Listening on port ${port}`, 'Server')
+  logger.info(`Listening on port ${port}`, 'Server')
   if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_USER_ID)
     bot.login(process.env.DISCORD_BOT_TOKEN)
 })

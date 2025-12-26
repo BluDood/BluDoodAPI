@@ -1,8 +1,7 @@
 import { Request } from 'express'
 import presence, { FilteredPresence } from '../lib/presence.js'
 import spotify, {
-  filterData,
-  SpotifyCurrentPlayingResponse
+  FilteredSpotifyCurrentPlayingResponse
 } from '../lib/spotify.js'
 
 export async function ws(ws: WebSocket, req: Request) {
@@ -14,15 +13,16 @@ export async function ws(ws: WebSocket, req: Request) {
       })
     )
 
-  const spotifyListener = (data: {
-    state: SpotifyCurrentPlayingResponse
-  }) =>
+  const spotifyListener = (
+    data: FilteredSpotifyCurrentPlayingResponse
+  ) => {
     ws.send(
       JSON.stringify({
         type: 'spotify',
-        data: filterData(data.state)
+        data
       })
     )
+  }
 
   if (presence.get()) {
     ws.send(
@@ -41,11 +41,11 @@ export async function ws(ws: WebSocket, req: Request) {
         data: spotify.getCurrent()
       })
     )
-    spotify.on('PLAYER_STATE_CHANGED', spotifyListener)
+    spotify.on('update', spotifyListener)
   }
 
   ws.addEventListener('close', () => {
     if (presence.get()) presence.off('update', discordListener)
-    if (spotify) spotify.off('PLAYER_STATE_CHANGED', spotifyListener)
+    if (spotify) spotify.off('update', spotifyListener)
   })
 }

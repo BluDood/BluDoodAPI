@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Events } from 'discord.js'
 import presenceHandler from './presence.js'
-import log from './log.js'
+import { logger } from './utils.js'
 
 const client = new Client({
   intents: [
@@ -17,7 +17,7 @@ client.on(Events.PresenceUpdate, (e, presence) => {
 })
 
 client.on(Events.ClientReady, async e => {
-  log(`Logged in as ${e.user.tag}`, 'Discord')
+  logger.info(`Logged in as ${e.user.tag}`, 'Discord')
 
   const members = await Promise.all(
     client.guilds.cache.map(g =>
@@ -27,7 +27,7 @@ client.on(Events.ClientReady, async e => {
   const member = members.find(m => m.id === process.env.DISCORD_USER_ID)
 
   if (!member) {
-    log(
+    logger.error(
       `User with ID ${process.env.DISCORD_USER_ID} does not share a server with the bot!`,
       'Discord'
     )
@@ -35,7 +35,7 @@ client.on(Events.ClientReady, async e => {
   }
 
   if (member.presence) presenceHandler.set(member.presence)
-  log(`Cached user ${member.user.globalName}`, 'Discord')
+  logger.info(`Cached user ${member.user.globalName}`, 'Discord')
 })
 
 export default client
