@@ -125,32 +125,101 @@ async function getClientToken(clientId: string) {
   return res.data.granted_token.token
 }
 
-export interface SpotifyCurrentPlayingResponse {
-  is_paused: boolean
-  position_as_of_timestamp: string
-  track: {
-    uri: string
-    metadata: ArtistNames &
-      ArtistUris & {
-        title: string
-        album_title: string
-        album_uri: string
-        image_url: string
-        image_small_url: string
-        duration: string
-      }
-  }
+export async function refreshAccessToken(
+  clientId: string,
+  clientSecret: string,
+  refreshToken: string
+) {
+  const res = await axios.post(
+    'https://accounts.spotify.com/api/token',
+    {},
+    {
+      params: {
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken
+      },
+      headers: {
+        Authorization: `Basic ${Buffer.from(
+          `${clientId}:${clientSecret}`
+        ).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      validateStatus: () => true
+    }
+  )
+
+  if (res.status !== 200) return null
+
+  return res.data.access_token
 }
 
-type PrefixedNumericKeys<Prefix extends string> =
-  | Prefix
-  | `${Prefix}:${number}`
+interface SpotifyTrackItem {
+  name: string
+  external_urls: {
+    spotify: string
+  }
+  artists: {
+    name: string
+    external_urls: {
+      spotify: string
+    }
+  }[]
+  album: {
+    name: string
+    external_urls: {
+      spotify: string
+    }
+    href: string
+    images: {
+      url: string
+      width: number
+      height: number
+    }[]
+  }
+  duration_ms: number
+}
 
-type ArtistKey = PrefixedNumericKeys<'artist_name'>
-type ArtistNames = Partial<Record<ArtistKey, string>>
+interface SpotifyEpisodeItem {
+  name: string
+  external_urls: {
+    spotify: string
+  }
+  images: {
+    url: string
+    width: number
+    height: number
+  }[]
+  show: {
+    name: string
+    publisher: string
+    external_urls: {
+      spotify: string
+    }
+    href: string
+    images: {
+      url: string
+      width: number
+      height: number
+    }[]
+  }
+  duration_ms: number
+}
 
-type ArtistUrisKey = PrefixedNumericKeys<'artist_uri'>
-type ArtistUris = Partial<Record<ArtistUrisKey, string>>
+export interface SpotifyCurrentPlayingResponse {
+  context: {
+    external_urls: {
+      spotify: string
+    }
+    href: string
+    type: string
+    uri: string
+  }
+  timestamp: number
+  progress_ms: number
+  currently_playing_type: 'track' | 'episode'
+  is_playing: boolean
+  item: SpotifyTrackItem | SpotifyEpisodeItem
+}
 
 export type FilteredSpotifyCurrentPlayingResponse =
   | { session: false }
@@ -179,95 +248,85 @@ export type FilteredSpotifyCurrentPlayingResponse =
     }
 
 export function filterData(
-  data: SpotifyCurrentPlayingResponse,
-  lastUpdate = Number.MAX_SAFE_INTEGER
+  data: SpotifyCurrentPlayingResponse
 ): FilteredSpotifyCurrentPlayingResponse {
-  if (!data || !data.track) {
+  if (!data || !data.item) {
     return { session: false }
   }
 
-  const { is_paused, track, position_as_of_timestamp } = data
+  const { is_playing, item, progress_ms, currently_playing_type } = data
 
-  const TIMEOUT = 1000 * 60 * 10 // 10 minutes
-  if (is_paused && lastUpdate <= Date.now() - TIMEOUT) {
-    return { session: false }
-  }
+  if (currently_playing_type === 'track') {
+    const track = item as SpotifyTrackItem
 
-  const progress = parseInt(position_as_of_timestamp) || 0
-  const duration = parseInt(track.metadata.duration) || 0
-
-  const currentTime = Math.min(
-    Math.max(
-      !is_paused && lastUpdate < Date.now()
-        ? progress + Math.floor(Date.now() - lastUpdate)
-        : progress,
-      0
-    ),
-    duration
-  )
-
-  const trackId = track.uri.split(':').pop()
-  const albumId = track.metadata.album_uri.split(':').pop()
-
-  const artists = Object.entries(track.metadata)
-    .filter(([key]) => key.startsWith('artist_name'))
-    .map(([key, name]) => {
-      const index = key.includes(':') ? parseInt(key.split(':')[1]) : 0
-      const uriKey = key.replace(
-        'artist_name',
-        'artist_uri'
-      ) as ArtistUrisKey
-      const uri = track.metadata[uriKey] || ''
-      const artistId = uri.split(':').pop() || ''
-      return { index, name: name ?? 'Unknown Artist', artistId }
-    })
-    .sort((a, b) => a.index - b.index)
-
-  return {
-    session: true,
-    playing: !is_paused,
-    name: track.metadata.title,
-    trackURL: `https://open.spotify.com/track/${trackId}`,
-    artists: artists.map(artist => ({
-      name: artist.name,
-      url: `https://open.spotify.com/artist/${artist.artistId}`
-    })),
-    album: {
-      name: track.metadata.album_title,
-      url: `https://open.spotify.com/album/${albumId}`
-    },
-    covers: [
-      {
-        url: track.metadata.image_url,
-        width: 300,
-        height: 300
+    return {
+      session: true,
+      playing: is_playing,
+      name: track.name,
+      trackURL: track.external_urls.spotify,
+      artists: track.artists.map(a => ({
+        name: a.name,
+        url: a.external_urls.spotify
+      })),
+      album: {
+        name: track.album.name,
+        url: track.album.external_urls.spotify
       },
-      {
-        url: track.metadata.image_small_url,
-        width: 64,
-        height: 64
+      covers: track.album.images,
+      duration: {
+        current: progress_ms,
+        total: track.duration_ms
       }
-    ],
-    duration: {
-      current: currentTime,
-      total: duration
     }
+  } else if (currently_playing_type === 'episode') {
+    const episode = item as SpotifyEpisodeItem
+
+    return {
+      session: true,
+      playing: is_playing,
+      name: episode.name,
+      trackURL: episode.external_urls.spotify,
+      artists: [
+        {
+          name: episode.show.name,
+          url: episode.show.external_urls.spotify
+        }
+      ],
+      album: {
+        name: episode.show.name,
+        url: episode.show.external_urls.spotify
+      },
+      covers: episode.images,
+      duration: {
+        current: progress_ms,
+        total: episode.duration_ms
+      }
+    }
+  } else {
+    return { session: false }
   }
 }
 
 class Spotify extends EventEmitter {
   private sp_dc: string | null = null
+  private clientId: string | null = null
+  private clientSecret: string | null = null
+  private refreshToken: string | null = null
 
   private ws: WebSocket | null = null
-  private current: SpotifyCurrentPlayingResponse | null = null
-  private lastUpdate: number = 0
 
-  private token: string | null = null
+  accessToken: string | null = null
+  private webToken: string | null = null
   private clientToken: string | null = null
 
   private retriedLogin = false
 
   instance: AxiosInstance = axios.create({
+    baseURL: 'https://api.spotify.com/v1',
+    validateStatus: () => true
+  })
+
+  webInstance: AxiosInstance = axios.create({
     headers: {
       ...BROWSER_HEADERS
     },
@@ -278,15 +337,42 @@ class Spotify extends EventEmitter {
     super()
 
     this.instance.interceptors.request.use(config => {
-      if (this.token && this.clientToken) {
-        config.headers.Authorization = `Bearer ${this.token}`
+      if (this.accessToken) {
+        config.headers.Authorization = `Bearer ${this.accessToken}`
+      }
+
+      return config
+    })
+
+    this.instance.interceptors.response.use(async res => {
+      if (res.status === 401) {
+        logger.info('Refreshing token...', 'Spotify')
+        this.accessToken = await refreshAccessToken(
+          this.clientId!,
+          this.clientSecret!,
+          this.refreshToken!
+        ).catch(err => {
+          this.emit('error', err)
+          return null
+        })
+
+        if (!this.accessToken) return res
+        return this.instance!(res.config)
+      }
+
+      return res
+    })
+
+    this.webInstance.interceptors.request.use(config => {
+      if (this.webToken && this.clientToken) {
+        config.headers.Authorization = `Bearer ${this.webToken}`
         config.headers['client-token'] = this.clientToken
       }
 
       return config
     })
 
-    this.instance.interceptors.response.use(async response => {
+    this.webInstance.interceptors.response.use(async response => {
       if (response.status === 401) {
         if (this.retriedLogin) {
           logger.error('Spotify re-authentication failed', 'Spotify')
@@ -298,10 +384,10 @@ class Spotify extends EventEmitter {
           'Spotify token expired, re-authenticating...',
           'Spotify'
         )
-        await this.login()
+        await this.loginWeb()
         this.retriedLogin = true
         const request = response.config
-        return this.instance.request(request)
+        return this.webInstance.request(request)
       } else if (response.status >= 400 && response.status < 600) {
         logger.warn(
           `Spotify API returned status ${response.status} for ${response.config.url}`,
@@ -314,7 +400,7 @@ class Spotify extends EventEmitter {
       return response
     })
 
-    this.on('DEVICE_STATE_CHANGED', e => {
+    this.on('DEVICE_STATE_CHANGED', async e => {
       if (!e.active_device_id) {
         this.emit('update', {
           session: false
@@ -322,9 +408,7 @@ class Spotify extends EventEmitter {
       }
 
       if (e.player_state) {
-        this.current = e.player_state
-        this.lastUpdate = Date.now()
-        const current = this.getCurrent()
+        const current = await this.getCurrent()
         if (current.session) {
           logger.debug(
             `Player state updated: ${current.name} (${
@@ -361,25 +445,48 @@ class Spotify extends EventEmitter {
     })
   }
 
-  async setup(sp_dc: string | null = null) {
+  async setup({
+    sp_dc,
+    clientId,
+    clientSecret,
+    refreshToken
+  }: {
+    sp_dc?: string
+    clientId?: string
+    clientSecret?: string
+    refreshToken?: string
+  } = {}) {
     if (this.ws) this.cleanup()
 
     sp_dc = sp_dc || this.sp_dc!
+    clientId = clientId || this.clientId!
+    clientSecret = clientSecret || this.clientSecret!
+    refreshToken = refreshToken || this.refreshToken!
 
     if (!sp_dc) {
       logger.error('sp_dc not set', 'Spotify')
       return
     }
 
+    if (!clientId || !clientSecret || !refreshToken) {
+      logger.error('Spotify client credentials not set', 'Spotify')
+      return
+    }
+
     this.sp_dc = sp_dc
+    this.clientId = clientId || null
+    this.clientSecret = clientSecret || null
+    this.refreshToken = refreshToken || null
+
     this.ws = null
 
     await this.login()
+    await this.loginWeb()
 
     logger.debug('Connecting to Spotify WebSocket...', 'Spotify')
 
     this.ws = new WebSocket(
-      `wss://dealer.spotify.com/?access_token=${this.token}`,
+      `wss://dealer.spotify.com/?access_token=${this.webToken}`,
       {
         headers: {
           ...SOCKET_HEADERS
@@ -429,18 +536,18 @@ class Spotify extends EventEmitter {
     })
   }
 
-  async login() {
+  async loginWeb() {
     if (!this.sp_dc) {
       logger.error('sp_dc not set', 'Spotify')
       return
     }
-    this.token = null
+    this.webToken = null
     this.clientToken = null
 
     logger.debug('Logging in to Spotify...', 'Spotify')
     const token = await getToken(this.sp_dc)
     if (!token) return
-    this.token = token.accessToken
+    this.webToken = token.accessToken
 
     logger.debug('Obtaining Spotify client token...', 'Spotify')
     const clientToken = await getClientToken(token.clientId)
@@ -448,12 +555,30 @@ class Spotify extends EventEmitter {
     this.clientToken = clientToken
   }
 
+  async login() {
+    if (!this.clientId || !this.clientSecret || !this.refreshToken) {
+      logger.error('Spotify client credentials not set', 'Spotify')
+      return
+    }
+
+    this.accessToken = null
+
+    logger.debug('Logging in to Spotify API...', 'Spotify')
+    const accessToken = await refreshAccessToken(
+      this.clientId,
+      this.clientSecret,
+      this.refreshToken
+    )
+    if (!accessToken) return
+    this.accessToken = accessToken
+  }
+
   async subscribe(connectionId: string) {
     const deviceId = random(40)
 
     logger.debug(`Creating device with ID ${deviceId}`, 'Spotify')
 
-    const deviceRes = await this.instance.post(
+    const deviceRes = await this.webInstance.post(
       'https://gew4-spclient.spotify.com/track-playback/v1/devices',
       {
         device: {
@@ -514,7 +639,7 @@ class Spotify extends EventEmitter {
       'Spotify'
     )
 
-    const connectRes = await this.instance.put(
+    const connectRes = await this.webInstance.put(
       `https://gew4-spclient.spotify.com/connect-state/v1/devices/hobs_${deviceId.slice(
         0,
         34
@@ -556,20 +681,36 @@ class Spotify extends EventEmitter {
     }
   }
 
-  getCurrent(): FilteredSpotifyCurrentPlayingResponse {
-    if (!this.current)
+  async getCurrent(): Promise<FilteredSpotifyCurrentPlayingResponse> {
+    const res = await this.instance!.get('/me/player', {
+      params: {
+        additional_types: 'episode'
+      }
+    })
+
+    if (!res.data || res.status !== 200)
       return {
         session: false
       }
 
-    return filterData(this.current, this.lastUpdate)
+    return filterData(res.data)
   }
 }
 
 let spotify: Spotify | null = null
-if (process.env.SPOTIFY_DC) {
+if (
+  process.env.SPOTIFY_DC &&
+  process.env.SPOTIFY_CLIENT_ID &&
+  process.env.SPOTIFY_CLIENT_SECRET &&
+  process.env.SPOTIFY_REFRESH_TOKEN
+) {
   spotify = new Spotify()
-  spotify.setup(process.env.SPOTIFY_DC)
+  spotify.setup({
+    sp_dc: process.env.SPOTIFY_DC,
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    refreshToken: process.env.SPOTIFY_REFRESH_TOKEN
+  })
 }
 
 export default spotify

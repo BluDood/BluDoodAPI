@@ -7,5 +7,5 @@ export async function get(
   next: NextFunction
 ) {
   if (!spotify) return next()
-  res.send(spotify.getCurrent())
+  res.send(await spotify.getCurrent())
 }

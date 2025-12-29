@@ -38,7 +38,7 @@ export async function ws(ws: WebSocket, req: Request) {
     ws.send(
       JSON.stringify({
         type: 'spotify',
-        data: spotify.getCurrent()
+        data: await spotify.getCurrent()
       })
     )
     spotify.on('update', spotifyListener)
