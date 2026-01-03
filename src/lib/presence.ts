@@ -36,7 +36,7 @@ class PresenceHandler extends EventEmitter {
   set(presence: Presence) {
     if (!presence.user) return
 
-    const filtered_activities = ['Spotify', 'Custom Status']
+    const filtered_activities = ['Spotify', 'Custom Status', 'Hang Status']
     const activities = presence.activities.filter(
       a => !filtered_activities.includes(a.name)
     )
